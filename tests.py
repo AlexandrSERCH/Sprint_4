@@ -1,38 +1,8 @@
 import pytest
-from main import BooksCollector
+from test_data import BOOKS_BY_GENRE, BOOK_AGE_RATING
 
 
 class TestBooksCollector:
-
-    @pytest.fixture
-    def books_collection(self):
-        return BooksCollector()
-
-    @pytest.fixture
-    def books_collection_with_one_book(self, books_collection):
-        books_collection.add_new_book("Дюна")
-        return books_collection
-
-    @pytest.fixture
-    def books_collection_with_genre(self, books_collection):
-        books_by_genre = {
-            "Дюна": "Фантастика",
-            "Основание": "Фантастика",
-            "Оно": "Ужасы",
-            "Зов Ктулху": "Ужасы",
-            "Убийство в «Восточном экспрессе»": "Детективы",
-            "Собака Баскервилей": "Детективы",
-            "Холодное сердце. История Анны и Эльзы": "Мультфильмы",
-            "Король Лев. Официальная новеллизация": "Мультфильмы",
-            "Трое в лодке, не считая собаки": "Комедии",
-            "Похождения бравого солдата Швейка": "Комедии"
-        }
-
-        for book, genre in books_by_genre.items():
-            books_collection.add_new_book(book)
-            books_collection.set_book_genre(book, genre)
-
-        return books_collection
 
     @pytest.mark.parametrize("title_book", ['Ю', 'Алиса в стране чудес'])
     def test_add_new_book_valid_book_returns_created_book(self, books_collection, title_book):
@@ -65,8 +35,9 @@ class TestBooksCollector:
         books_collection_with_one_book.set_book_genre(existing_book, genre)
         assert books_collection_with_one_book.get_book_genre(existing_book) == ''
 
-    def test_get_book_genre_exist_books_returns_comedy_genre(self, books_collection_with_genre):
-        assert books_collection_with_genre.get_book_genre("Похождения бравого солдата Швейка") == "Комедии"
+    def test_get_book_genre_exist_books_returns_valid_genre(self, books_collection_with_genre):
+        book, expected_result = next(iter(BOOKS_BY_GENRE.items()))
+        assert books_collection_with_genre.get_book_genre(book) == expected_result
 
     def test_get_book_genre_non_existent_book_returns_None(self, books_collection):
         book = "Книга, которой нет"
@@ -94,16 +65,10 @@ class TestBooksCollector:
         assert len(actual_result) == 1
         assert actual_result[book] == genre
 
-    def test_get_books_for_children_books_have_genre_age_rating_returns_filtered_book_list(self, books_collection_with_genre):
+    @pytest.mark.parametrize("forbidden_book", BOOK_AGE_RATING)
+    def test_get_books_for_children_returns_filtered_list(self, books_collection_with_genre, forbidden_book):
         actual_result = books_collection_with_genre.get_books_for_children()
-
-        books_having_age_rating = []
-        for book, genre in books_collection_with_genre.books_genre.items():
-            for genre_age_rating in books_collection_with_genre.genre_age_rating:
-                if genre == genre_age_rating:
-                    books_having_age_rating.append(book)
-
-        assert all(book not in books_having_age_rating for book in actual_result)
+        assert forbidden_book not in actual_result
 
     def test_add_book_in_favorites_valid_book_returns_favourites_list(self, books_collection_with_genre):
         book_in_collection = list(books_collection_with_genre.get_books_genre())[0]
